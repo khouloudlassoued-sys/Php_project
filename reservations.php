@@ -184,7 +184,7 @@ $specific_rooms = [
                                     <div class="d-flex justify-content-between">
                                         <div>
                                             <i class="fas fa-sign-in-alt me-2"></i>
-                                            <strong>Départ:</strong>
+                                            <strong>Check-in:</strong>
                                             <?php 
                                                 $check_in = new DateTime($reservation['check_in']);
                                                 echo $check_in->format('d/m/Y');
@@ -192,7 +192,7 @@ $specific_rooms = [
                                         </div>
                                         <div>
                                             <i class="fas fa-sign-out-alt me-2"></i>
-                                            <strong>Arrivée:</strong>
+                                            <strong>Check-out:</strong>
                                             <?php 
                                                 $check_out = new DateTime($reservation['check_out']);
                                                 echo $check_out->format('d/m/Y');
@@ -208,8 +208,8 @@ $specific_rooms = [
                                             <strong>Nuits:</strong> <?php echo $reservation['nights']; ?>
                                         </p>
                                         <p class="mb-0">
-                                            <i class="fas fa-euro-sign me-2"></i>
-                                            <strong>Total:</strong> <?php echo number_format($reservation['total_price'], 2); ?> €
+                                            <i class="fas fa-money-bill-wave me-2"></i>
+                                            <strong>Total:</strong> <?php echo number_format($reservation['total_price'], 2); ?> DNT
                                         </p>
                                     </div>
                                     <div class="text-end">

@@ -26,7 +26,7 @@ $room_images = [
 
 // Images spécifiques par numéro de chambre
 $specific_rooms = [
-    '101' => 'https://images.unsplash.com/photo-1598928506311-c55ded91a20c?auto=format&fit=crop&w=800&q=80',
+    '101' => 'https://images.unsplash.com/photo-1578683010236-d716f9a3f461?auto=format&fit=crop&w=800&q=80',
     '102' => 'https://images.unsplash.com/photo-1578683010236-d716f9a3f461?auto=format&fit=crop&w=800&q=80',
     '201' => 'https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&w=800&q=80'
 ];
@@ -158,7 +158,7 @@ $featured_rooms = array_slice($rooms, 0, min(3, count($rooms)));
                 <div class="col-md-4 mb-4 <?php echo $index % 2 == 0 ? 'slide-in-left' : 'slide-in-right'; ?>">
                     <div class="card room-card">
                         <div class="room-price">
-                            <?php echo number_format($room['price'], 2); ?> €/nuit
+                            <?php echo number_format($room['price'], 2); ?> DNT/nuit
                         </div>
                         <div class="room-image-container">
                             <?php 

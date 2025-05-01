@@ -158,7 +158,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             <div class="col-md-6 mb-4 slide-in-left">
                 <div class="card room-card">
                     <div class="room-price">
-                        <?php echo number_format($room['price'], 2); ?> €/nuit
+                        <?php echo number_format($room['price'], 2); ?> DNT/nuit
                     </div>
                     <div class="room-image-container">
                         <img src="<?php echo $room_images[$room['type']]; ?>" 
@@ -221,14 +221,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                             <div class="mb-4">
                                 <label for="check_in" class="form-label">
                                     <i class="fas fa-calendar me-2"></i>
-                                    Date de départ
+                                    Check-in
                                 </label>
                                 <input type="date" class="form-control" id="check_in" name="check_in" required>
                             </div>
                             <div class="mb-4">
                                 <label for="check_out" class="form-label">
                                     <i class="fas fa-calendar-check me-2"></i>
-                                    Date d'arrivée
+                                Check-out
                                 </label>
                                 <input type="date" class="form-control" id="check_out" name="check_out" required>
                             </div>
@@ -240,8 +240,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                         <strong>Nombre de nuits:</strong> <span id="nightCount">0</span>
                                     </p>
                                     <p class="mb-0">
-                                        <i class="fas fa-euro-sign me-2"></i>
-                                        <strong>Prix total estimé:</strong> <span id="totalPrice">0.00</span> €
+                                        <i class="fas fa-money-bill-wave me-2"></i>
+                                        <strong>Prix total estimé:</strong> <span id="totalPrice">0.00</span> DNT
                                     </p>
                                 </div>
                             </div>

@@ -118,7 +118,7 @@ $rooms = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         <tr>
                             <td><?php echo htmlspecialchars($room['room_number']); ?></td>
                             <td><?php echo htmlspecialchars($room['type']); ?></td>
-                            <td><?php echo number_format($room['price'], 2); ?> €</td>
+                            <td><?php echo number_format($room['price'], 2); ?> DNT</td>
                             <td><?php echo $room['capacity']; ?> personnes</td>
                             <td>
                                 <span class="badge bg-<?php 

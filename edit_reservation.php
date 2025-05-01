@@ -165,7 +165,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             <div class="col-md-6 mb-4 slide-in-left">
                 <div class="card room-card">
                     <div class="room-price">
-                        <?php echo number_format($reservation['price'], 2); ?> €/nuit
+                        <?php echo number_format($reservation['price'], 2); ?> DNT/nuit
                     </div>
                     <div class="room-image-container">
                         <?php 
@@ -245,8 +245,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                         <strong>Nombre de nuits:</strong> <span id="nightCount">0</span>
                                     </p>
                                     <p class="mb-0">
-                                        <i class="fas fa-euro-sign me-2"></i>
-                                        <strong>Prix total estimé:</strong> <span id="totalPrice">0.00</span> €
+                                        <i class="fas fa-money-bill-wave me-2"></i>
+                                        <strong>Prix total estimé:</strong> <span id="totalPrice">0.00</span> DNT
                                     </p>
                                 </div>
                             </div>
