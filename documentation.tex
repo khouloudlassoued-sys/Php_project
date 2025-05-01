@@ -1,0 +1,703 @@
+\documentclass[a4paper,12pt]{report}
+\usepackage[utf8]{inputenc}
+\usepackage[french]{babel}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{geometry}
+\usepackage{fancyhdr}
+
+\geometry{a4paper, margin=2.5cm}
+
+% Configuration des listings de code
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.95}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{blue},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2
+}
+
+\lstset{style=mystyle}
+
+% Configuration en-tête et pied de page
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{Système de Gestion de Réservation d'Hôtel}
+\fancyhead[R]{\thepage}
+\fancyfoot[C]{Khouloud LASSOUED - \the\year}
+
+\begin{document}
+
+\begin{titlepage}
+    \centering
+    \vspace*{1cm}
+    \includegraphics[width=0.5\textwidth]{assets/images/screenshot1.png}\\[1cm]
+    {\huge\bfseries Système de Gestion de Réservation d'Hôtel\\}
+    \vspace{1cm}
+    {\Large Documentation Technique\\}
+    \vspace{2cm}
+    {\Large\itshape Khouloud LASSOUED\\}
+    \vfill
+    \large \today
+\end{titlepage}
+
+\tableofcontents
+
+\chapter{Introduction}
+\section{Présentation du projet}
+Le projet est une application web PHP de gestion de réservations d'hôtel développée avec une architecture MVC simplifiée. Cette application permet aux utilisateurs de s'inscrire, se connecter, parcourir les chambres disponibles, effectuer des réservations, et gérer leurs réservations existantes.
+
+\section{Technologies utilisées}
+\begin{itemize}
+    \item \textbf{Backend}: PHP 7.4+, MySQL/PDO
+    \item \textbf{Frontend}: HTML5, CSS3, JavaScript
+    \item \textbf{Framework CSS}: Bootstrap 5
+    \item \textbf{Bibliothèques}: Font Awesome, jQuery
+    \item \textbf{Base de données}: MySQL avec PDO
+\end{itemize}
+
+\chapter{Architecture de l'application}
+\section{Structure des fichiers}
+\begin{lstlisting}[language=bash]
+PHP_web/
+|-- admin/
+|   `-- rooms.php
+|-- assets/
+|   |-- css/
+|   |   `-- style.css
+|   `-- images/
+|-- auth/
+|   |-- login.php
+|   |-- logout.php
+|   `-- register.php
+|-- config/
+|   |-- database.php
+|   `-- db.php
+|-- index.php
+|-- reservation.php
+|-- reservations.php
+|-- edit_reservation.php
+|-- database.sql
+|-- README.md
+`-- LICENSE
+\end{lstlisting}
+
+\section{Base de données}
+La base de données comprend trois tables principales:
+\begin{itemize}
+    \item \textbf{users}: stocke les informations utilisateurs
+    \item \textbf{rooms}: contient les détails des chambres
+    \item \textbf{reservations}: gère les réservations
+\end{itemize}
+
+\begin{lstlisting}[language=SQL, caption=Schéma de la base de données]
+-- Table des utilisateurs
+CREATE TABLE IF NOT EXISTS users (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    email VARCHAR(100) NOT NULL UNIQUE,
+    role ENUM('admin', 'client') DEFAULT 'client',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Table des chambres
+CREATE TABLE IF NOT EXISTS rooms (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    room_number VARCHAR(10) NOT NULL UNIQUE,
+    type VARCHAR(50) NOT NULL,
+    price DECIMAL(10,2) NOT NULL,
+    capacity INT NOT NULL,
+    description TEXT,
+    status ENUM('disponible', 'occupée', 'maintenance') DEFAULT 'disponible'
+);
+
+-- Table des réservations
+CREATE TABLE IF NOT EXISTS reservations (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT NOT NULL,
+    room_id INT NOT NULL,
+    check_in DATE NOT NULL,
+    check_out DATE NOT NULL,
+    status ENUM('en attente', 'confirmée', 'annulée') DEFAULT 'en attente',
+    total_price DECIMAL(10,2) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (room_id) REFERENCES rooms(id)
+);
+\end{lstlisting}
+
+\chapter{Fonctionnalités Implémentées}
+
+\section{Système d'authentification}
+\subsection{Inscription des utilisateurs}
+L'application permet aux utilisateurs de créer un compte en fournissant un nom d'utilisateur, une adresse e-mail et un mot de passe.
+
+\begin{lstlisting}[language=PHP, caption=Extrait du code d'inscription]
+// Traitement du formulaire d'inscription
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $username = trim($_POST['username']);
+    $email = trim($_POST['email']);
+    $password = $_POST['password'];
+    $confirm_password = $_POST['confirm_password'];
+    
+    // Validation des entrées
+    if (empty($username)) {
+        $errors['username'] = "Le nom d'utilisateur est requis";
+    }
+    
+    if (empty($email)) {
+        $errors['email'] = "L'adresse e-mail est requise";
+    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $errors['email'] = "Format d'adresse e-mail invalide";
+    }
+    
+    if (empty($password)) {
+        $errors['password'] = "Le mot de passe est requis";
+    } elseif (strlen($password) < 6) {
+        $errors['password'] = "Le mot de passe doit contenir au moins 6 caractères";
+    }
+    
+    if ($password !== $confirm_password) {
+        $errors['confirm_password'] = "Les mots de passe ne correspondent pas";
+    }
+    
+    // Si pas d'erreurs, créer l'utilisateur
+    if (empty($errors)) {
+        // Hachage du mot de passe
+        $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+        
+        // Insertion dans la base de données
+        try {
+            $query = "INSERT INTO users (username, email, password) 
+                     VALUES (:username, :email, :password)";
+            $stmt = $db->prepare($query);
+            $stmt->bindParam(':username', $username);
+            $stmt->bindParam(':email', $email);
+            $stmt->bindParam(':password', $hashed_password);
+            
+            if ($stmt->execute()) {
+                // Redirection vers la page de connexion
+                header("Location: login.php?registered=true");
+                exit();
+            }
+        } catch(PDOException $e) {
+            if ($e->getCode() == 23000) { // Code d'erreur pour duplicate entry
+                if (strpos($e->getMessage(), 'username')) {
+                    $errors['username'] = "Ce nom d'utilisateur est déjà utilisé";
+                } elseif (strpos($e->getMessage(), 'email')) {
+                    $errors['email'] = "Cette adresse e-mail est déjà utilisée";
+                }
+            } else {
+                $errors['db'] = "Erreur lors de l'inscription: " . $e->getMessage();
+            }
+        }
+    }
+}
+\end{lstlisting}
+
+\subsection{Connexion des utilisateurs}
+Le système de connexion vérifie les identifiants de l'utilisateur et crée une session sécurisée.
+
+\begin{lstlisting}[language=PHP, caption=Extrait du code de connexion]
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $username = trim($_POST['username']);
+    $password = $_POST['password'];
+    
+    // Validation des entrées
+    if (empty($username)) {
+        $errors['username'] = "Le nom d'utilisateur est requis";
+    }
+    
+    if (empty($password)) {
+        $errors['password'] = "Le mot de passe est requis";
+    }
+    
+    // Si pas d'erreurs, vérifier les identifiants
+    if (empty($errors)) {
+        try {
+            $query = "SELECT * FROM users WHERE username = :username";
+            $stmt = $db->prepare($query);
+            $stmt->bindParam(':username', $username);
+            $stmt->execute();
+            
+            if ($stmt->rowCount() == 1) {
+                $user = $stmt->fetch(PDO::FETCH_ASSOC);
+                
+                // Vérifier le mot de passe
+                if (password_verify($password, $user['password'])) {
+                    // Créer la session
+                    $_SESSION['user_id'] = $user['id'];
+                    $_SESSION['username'] = $user['username'];
+                    $_SESSION['role'] = $user['role'];
+                    
+                    // Redirection vers la page d'accueil
+                    header("Location: ../index.php");
+                    exit();
+                } else {
+                    $errors['login'] = "Nom d'utilisateur ou mot de passe incorrect";
+                }
+            } else {
+                $errors['login'] = "Nom d'utilisateur ou mot de passe incorrect";
+            }
+        } catch(PDOException $e) {
+            $errors['db'] = "Erreur lors de la connexion: " . $e->getMessage();
+        }
+    }
+}
+\end{lstlisting}
+
+\section{Gestion des chambres}
+\subsection{Affichage des chambres disponibles}
+La page d'accueil affiche les chambres disponibles avec leurs détails et images.
+
+\begin{lstlisting}[language=PHP, caption=Requête pour récupérer les chambres disponibles]
+// Requête SQL avancée pour récupérer les chambres disponibles
+$query = "SELECT r.*, 
+          (SELECT COUNT(*) FROM reservations res 
+           WHERE res.room_id = r.id 
+           AND res.status = 'confirmée') as reservation_count
+          FROM rooms r 
+          WHERE r.status = 'disponible'
+          ORDER BY r.price ASC";
+$stmt = $db->prepare($query);
+$stmt->execute();
+$rooms = $stmt->fetchAll(PDO::FETCH_ASSOC);
+\end{lstlisting}
+
+\subsection{Affichage des détails d'une chambre}
+Chaque chambre dispose d'une affichage détaillé avec ses caractéristiques.
+
+\begin{lstlisting}[language=HTML, caption=Structure HTML d'une carte de chambre]
+<div class="card room-card">
+    <div class="room-price">
+        <?php echo number_format($room['price'], 2); ?> €/nuit
+    </div>
+    <div class="room-image-container">
+        <img src="<?php echo $image_url; ?>" 
+             alt="Chambre <?php echo htmlspecialchars($room['room_number']); ?>" 
+             class="room-image">
+        <div class="room-overlay">
+            <div class="room-type">
+                <i class="fas fa-bed"></i>
+                <?php echo htmlspecialchars($room['type']); ?>
+            </div>
+        </div>
+    </div>
+    <div class="card-body">
+        <h5 class="card-title">
+            <i class="fas fa-door-open me-2"></i>
+            Chambre <?php echo htmlspecialchars($room['room_number']); ?>
+        </h5>
+        <p class="card-text">
+            <i class="fas fa-info-circle me-2"></i>
+            <?php echo htmlspecialchars($room['description']); ?>
+        </p>
+        <div class="room-features">
+            <span class="room-feature">
+                <i class="fas fa-users me-1"></i>
+                <?php echo $room['capacity']; ?> pers.
+            </span>
+            <span class="room-feature">
+                <i class="fas fa-wifi me-1"></i>
+                WiFi
+            </span>
+            <span class="room-feature">
+                <i class="fas fa-tv me-1"></i>
+                TV
+            </span>
+        </div>
+    </div>
+</div>
+\end{lstlisting}
+
+\section{Système de réservation}
+\subsection{Création d'une réservation}
+Les utilisateurs peuvent réserver une chambre pour une période spécifique.
+
+\begin{lstlisting}[language=PHP, caption=Traitement du formulaire de réservation]
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $check_in = $_POST['check_in'];
+    $check_out = $_POST['check_out'];
+    
+    // Vérifier la disponibilité de la chambre pour la période
+    $query = "SELECT COUNT(*) FROM reservations 
+              WHERE room_id = :room_id 
+              AND status = 'confirmée'
+              AND ((check_in <= :check_out AND check_out >= :check_in))";
+    $stmt = $db->prepare($query);
+    $stmt->bindParam(':room_id', $room_id);
+    $stmt->bindParam(':check_in', $check_in);
+    $stmt->bindParam(':check_out', $check_out);
+    $stmt->execute();
+    
+    if ($stmt->fetchColumn() == 0) {
+        // Calculer le nombre de nuits
+        $date1 = new DateTime($check_in);
+        $date2 = new DateTime($check_out);
+        $interval = $date1->diff($date2);
+        $nights = $interval->days;
+        
+        // Calculer le prix total
+        $total_price = $nights * $room['price'];
+        
+        try {
+            $query = "INSERT INTO reservations (user_id, room_id, check_in, check_out, total_price) 
+                     VALUES (:user_id, :room_id, :check_in, :check_out, :total_price)";
+            $stmt = $db->prepare($query);
+            $stmt->bindParam(':user_id', $_SESSION['user_id']);
+            $stmt->bindParam(':room_id', $room_id);
+            $stmt->bindParam(':check_in', $check_in);
+            $stmt->bindParam(':check_out', $check_out);
+            $stmt->bindParam(':total_price', $total_price);
+            
+            if ($stmt->execute()) {
+                header("Location: reservations.php");
+                exit();
+            }
+        } catch(PDOException $e) {
+            $error = "Erreur lors de la réservation: " . $e->getMessage();
+        }
+    } else {
+        $error = "La chambre n'est pas disponible pour cette période";
+    }
+}
+\end{lstlisting}
+
+\subsection{Calcul automatique du prix}
+Le système calcule automatiquement le prix total en fonction de la durée du séjour.
+
+\begin{lstlisting}[language=JavaScript, caption=Script de calcul du prix]
+// Calculer le nombre de nuits et le prix total
+function calculateTotal() {
+    const checkIn = document.getElementById('check_in').value;
+    const checkOut = document.getElementById('check_out').value;
+    
+    if (checkIn && checkOut) {
+        const date1 = new Date(checkIn);
+        const date2 = new Date(checkOut);
+        
+        // Vérifier que la date de départ est bien après la date d'arrivée
+        if (date2 <= date1) {
+            console.error("La date de départ doit être postérieure à la date d'arrivée");
+            return;
+        }
+        
+        const diffTime = date2.getTime() - date1.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        
+        if (diffDays > 0) {
+            const pricePerNight = <?php echo $room['price']; ?>;
+            const totalPrice = diffDays * pricePerNight;
+            
+            document.getElementById('nightCount').textContent = diffDays;
+            document.getElementById('totalPrice').textContent = totalPrice.toFixed(2);
+        }
+    }
+}
+\end{lstlisting}
+
+\section{Gestion des réservations}
+\subsection{Affichage des réservations}
+Les utilisateurs peuvent consulter leurs réservations avec tous les détails.
+
+\begin{lstlisting}[language=PHP, caption=Récupération des réservations d'un utilisateur]
+// Récupérer les réservations de l'utilisateur avec une requête SQL avancée
+$query = "SELECT r.*, 
+          rm.room_number, rm.type as room_type, rm.price as room_price,
+          DATEDIFF(r.check_out, r.check_in) as nights
+          FROM reservations r
+          JOIN rooms rm ON r.room_id = rm.id
+          WHERE r.user_id = :user_id
+          ORDER BY r.check_in DESC";
+$stmt = $db->prepare($query);
+$stmt->bindParam(':user_id', $_SESSION['user_id']);
+$stmt->execute();
+$reservations = $stmt->fetchAll(PDO::FETCH_ASSOC);
+\end{lstlisting}
+
+\subsection{Modification d'une réservation}
+Les utilisateurs peuvent modifier les dates de leurs réservations.
+
+\begin{lstlisting}[language=PHP, caption=Mise à jour d'une réservation]
+// Vérifier la disponibilité de la chambre pour la période (en excluant la réservation actuelle)
+$query = "SELECT COUNT(*) FROM reservations 
+          WHERE room_id = :room_id 
+          AND id != :reservation_id
+          AND status = 'confirmée'
+          AND ((check_in <= :check_out AND check_out >= :check_in))";
+$stmt = $db->prepare($query);
+$stmt->bindParam(':room_id', $reservation['room_id']);
+$stmt->bindParam(':reservation_id', $reservation_id);
+$stmt->bindParam(':check_in', $check_in);
+$stmt->bindParam(':check_out', $check_out);
+$stmt->execute();
+
+if ($stmt->fetchColumn() == 0) {
+    // Calculer le nombre de nuits
+    $date1 = new DateTime($check_in);
+    $date2 = new DateTime($check_out);
+    $interval = $date1->diff($date2);
+    $nights = $interval->days;
+    
+    // Calculer le prix total
+    $total_price = $nights * $reservation['price'];
+    
+    try {
+        $query = "UPDATE reservations SET check_in = :check_in, check_out = :check_out, total_price = :total_price
+                  WHERE id = :id AND user_id = :user_id";
+        $stmt = $db->prepare($query);
+        $stmt->bindParam(':check_in', $check_in);
+        $stmt->bindParam(':check_out', $check_out);
+        $stmt->bindParam(':total_price', $total_price);
+        $stmt->bindParam(':id', $reservation_id);
+        $stmt->bindParam(':user_id', $_SESSION['user_id']);
+        
+        if ($stmt->execute()) {
+            header("Location: reservations.php?message=updated");
+            exit();
+        }
+    } catch(PDOException $e) {
+        $error = "Erreur lors de la mise à jour de la réservation: " . $e->getMessage();
+    }
+} else {
+    $error = "La chambre n'est pas disponible pour cette période";
+}
+\end{lstlisting}
+
+\subsection{Suppression d'une réservation}
+Les utilisateurs peuvent annuler leurs réservations.
+
+\begin{lstlisting}[language=PHP, caption=Suppression d'une réservation]
+// Traitement de la suppression de réservation
+if (isset($_GET['action']) && $_GET['action'] == 'delete' && isset($_GET['id'])) {
+    $reservation_id = $_GET['id'];
+    
+    // Vérifier que la réservation appartient à l'utilisateur
+    $query = "SELECT * FROM reservations WHERE id = :id AND user_id = :user_id";
+    $stmt = $db->prepare($query);
+    $stmt->bindParam(':id', $reservation_id);
+    $stmt->bindParam(':user_id', $_SESSION['user_id']);
+    $stmt->execute();
+    
+    if ($stmt->rowCount() > 0) {
+        // Supprimer la réservation
+        $query = "DELETE FROM reservations WHERE id = :id";
+        $stmt = $db->prepare($query);
+        $stmt->bindParam(':id', $reservation_id);
+        
+        if ($stmt->execute()) {
+            $success_message = "La réservation a été supprimée avec succès.";
+        } else {
+            $error_message = "Erreur lors de la suppression de la réservation.";
+        }
+    } else {
+        $error_message = "Vous n'êtes pas autorisé à supprimer cette réservation.";
+    }
+}
+\end{lstlisting}
+
+\section{Interface utilisateur}
+\subsection{Design responsive}
+L'application s'adapte à tous les appareils grâce à Bootstrap et des styles CSS personnalisés.
+
+\begin{lstlisting}[language=CSS, caption=Extrait des styles CSS]
+/* Room Cards */
+.room-card {
+    position: relative;
+    overflow: hidden;
+    border: none;
+    border-radius: 15px;
+    box-shadow: var(--shadow);
+    transition: all 0.3s ease;
+    height: 100%;
+}
+
+.room-image-container {
+    position: relative;
+    height: 250px;
+    overflow: hidden;
+}
+
+.room-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+}
+
+.room-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+    padding: 20px;
+    color: white;
+}
+
+.room-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.room-card:hover .room-image {
+    transform: scale(1.05);
+}
+\end{lstlisting}
+
+\subsection{Animations}
+Des animations ont été ajoutées pour améliorer l'expérience utilisateur.
+
+\begin{lstlisting}[language=CSS, caption=Animations CSS]
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+    animation: fadeIn 0.8s ease forwards;
+}
+
+.fade-in-up {
+    animation: fadeInUp 0.8s ease forwards;
+}
+
+.fade-in-down {
+    animation: fadeInDown 0.8s ease forwards;
+}
+\end{lstlisting}
+
+\section{Administration}
+\subsection{Gestion des chambres}
+Les administrateurs peuvent gérer les chambres (ajouter, modifier, supprimer).
+
+\begin{lstlisting}[language=PHP, caption=Interface d'administration des chambres]
+// Code de l'interface d'administration des chambres
+// Accessible uniquement aux utilisateurs avec le rôle 'admin'
+if ($_SESSION['role'] != 'admin') {
+    header("Location: ../index.php");
+    exit();
+}
+
+// Traitement des actions d'administration (ajout, modification, suppression)
+if (isset($_GET['action'])) {
+    // Traitement des différentes actions administratives
+    switch ($_GET['action']) {
+        case 'add':
+            // Code pour ajouter une chambre
+            break;
+        case 'edit':
+            // Code pour modifier une chambre
+            break;
+        case 'delete':
+            // Code pour supprimer une chambre
+            break;
+    }
+}
+
+// Récupération de toutes les chambres pour l'affichage
+$query = "SELECT * FROM rooms ORDER BY room_number";
+$stmt = $db->prepare($query);
+$stmt->execute();
+$rooms = $stmt->fetchAll(PDO::FETCH_ASSOC);
+\end{lstlisting}
+
+\chapter{Sécurité}
+\section{Protection contre les injections SQL}
+Toutes les requêtes SQL utilisent des requêtes préparées avec PDO pour éviter les injections SQL.
+
+\begin{lstlisting}[language=PHP, caption=Utilisation de requêtes préparées]
+// Exemple de requête préparée avec PDO
+$query = "SELECT * FROM users WHERE username = :username";
+$stmt = $db->prepare($query);
+$stmt->bindParam(':username', $username);
+$stmt->execute();
+\end{lstlisting}
+
+\section{Validation des données}
+Les entrées utilisateur sont validées côté serveur pour garantir leur intégrité.
+
+\begin{lstlisting}[language=PHP, caption=Validation des données]
+// Validation des dates de réservation
+if (empty($check_in)) {
+    $errors['check_in'] = "La date d'arrivée est requise";
+}
+
+if (empty($check_out)) {
+    $errors['check_out'] = "La date de départ est requise";
+}
+
+// Validation que la date de départ est après la date d'arrivée
+$date1 = new DateTime($check_in);
+$date2 = new DateTime($check_out);
+if ($date2 <= $date1) {
+    $errors['check_out'] = "La date de départ doit être postérieure à la date d'arrivée";
+}
+\end{lstlisting}
+
+\section{Protection des mots de passe}
+Les mots de passe sont hachés à l'aide de la fonction \texttt{password\_hash} de PHP.
+
+\begin{lstlisting}[language=PHP, caption=Hachage des mots de passe]
+// Hachage du mot de passe
+$hashed_password = password_hash($password, PASSWORD_DEFAULT);
+
+// Vérification du mot de passe
+if (password_verify($password, $user['password'])) {
+    // Mot de passe correct
+    // ...
+}
+\end{lstlisting}
+
+\chapter{Améliorations futures}
+\section{Suggestions d'amélioration}
+\begin{itemize}
+    \item \textbf{Système de recherche et filtrage}: Ajouter un module de recherche et filtrage avancé des chambres par prix, type, capacité et disponibilité.
+    \item \textbf{Système d'avis et notations}: Permettre aux clients de laisser des avis et des notations sur leur séjour.
+    \item \textbf{Tableau de bord utilisateur amélioré}: Créer un profil utilisateur avec statistiques de séjour.
+    \item \textbf{Système de paiement}: Intégrer un système de paiement en ligne (PayPal, Stripe).
+    \item \textbf{Notifications par email}: Envoyer des confirmations de réservation par email.
+    \item \textbf{API RESTful}: Développer une API pour permettre l'intégration avec d'autres services.
+\end{itemize}
+
+\chapter{Conclusion}
+Le Système de Gestion de Réservation d'Hôtel est une application web complète qui offre toutes les fonctionnalités essentielles pour gérer les réservations d'un hôtel. L'application est sécurisée, responsive et offre une expérience utilisateur agréable.
+
+L'architecture modulaire permet d'ajouter facilement de nouvelles fonctionnalités et d'étendre les capacités du système selon les besoins spécifiques.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\textwidth]{assets/images/screenshot2.png}
+    \caption{Interface de réservation}
+\end{figure}
+
+\end{document} 
